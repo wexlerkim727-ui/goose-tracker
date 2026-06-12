@@ -6,16 +6,23 @@
 <title>鹅鸭杀 记牌器</title>
 <style>
   :root{
-    --bg:#0f1226; --panel:#191d3a; --panel2:#232850;
+    --bg:#0f1226; --bg2:#141838; --panel:#191d3a; --panel2:#232850;
     --line:#2e3566; --txt:#e8ebff; --muted:#8b90c4;
     --good:#34c759; --bad:#ff453a; --neutral:#ffd60a; --unknown:#6c7299;
     --accent:#5b8cff;
   }
+  body.theme-light{
+    --bg:#eef1f8; --bg2:#e3e8f5; --panel:#ffffff; --panel2:#eef1f8;
+    --line:#d4dae9; --txt:#1b2142; --muted:#6a7099;
+    --good:#1e9e4a; --bad:#e0342a; --neutral:#b88600; --unknown:#9aa0c0;
+    --accent:#3a6ff0;
+  }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   body{
-    margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;
-    background:linear-gradient(160deg,#0f1226,#141838);color:var(--txt);
-    min-height:100vh;padding:16px;
+    margin:0 auto;max-width:1280px;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:linear-gradient(160deg,var(--bg),var(--bg2));color:var(--txt);
+    min-height:100vh;padding:16px;transition:background .25s,color .25s;
   }
   header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
   header h1{font-size:20px;margin:0;font-weight:700;letter-spacing:.5px}
@@ -155,7 +162,36 @@
   .ref-col li b{color:var(--txt);font-weight:600}
   footer{text-align:center;color:#4d5384;font-size:11px;margin-top:20px}
   .count{font-size:12px;color:var(--muted)}
-  @media(max-width:520px){.grid{grid-template-columns:1fr 1fr}.card{padding:10px}}
+  /* 平板 */
+  @media(max-width:780px){
+    .ref-body{grid-template-columns:1fr 1fr}
+  }
+  /* 手机 */
+  @media(max-width:600px){
+    body{padding:10px}
+    header h1{font-size:18px}
+    .toolbar{width:100%;gap:6px}
+    .toolbar button{flex:1 1 auto;font-size:12px;padding:8px 6px}
+    .count{order:-1;width:100%;text-align:center}
+    .grid{grid-template-columns:1fr 1fr;gap:8px}
+    .card{padding:9px;border-left-width:4px}
+    .pname{font-size:14px}
+    .factions{gap:6px}
+    .fbox{min-width:0;flex:1;padding:8px}
+    .fbox .fmarked{font-size:20px}
+    .fbox .ftarget{width:36px}
+    .fbox .fremain{font-size:11px}
+    .drow{flex-wrap:wrap}
+    .drow select,.drow .drole{min-width:0}
+    .drow .drole{flex:1 1 100%;order:3}
+    .ref-body{grid-template-columns:1fr}
+    .ai-cfg{grid-template-columns:1fr 1fr}
+  }
+  /* 窄屏单列 */
+  @media(max-width:380px){
+    .grid{grid-template-columns:1fr}
+    .ai-cfg{grid-template-columns:1fr}
+  }
 </style>
 </head>
 <body>
@@ -166,6 +202,7 @@
   </div>
   <div class="toolbar">
     <span class="count" id="count"></span>
+    <button onclick="toggleTheme()" id="themeBtn">🌙 深色</button>
     <button onclick="setCount(-1)">− 玩家</button>
     <button onclick="setCount(1)">＋ 玩家</button>
     <button onclick="resetTags()">清空标记</button>
@@ -291,6 +328,7 @@ let state=load()||{count:13,players:{},factions:{good:8,neutral:2,bad:3},draft:[
 if(!state.factions)state.factions={good:8,neutral:2,bad:3};
 if(!state.draft)state.draft=[];
 if(!state.ai)state.ai={url:'',key:'',model:''};
+if(!state.theme)state.theme='dark';
 
 // 角色 → 阵营(手游S3版,选角色时自动给玩家标对应阵营色)
 const ROLES={
@@ -585,6 +623,18 @@ async function runAI(){
     out.textContent='❌ 调用失败:'+e.message+'\n\n常见原因:① API地址/Key/模型名有误;② 本地文件直连被服务商的跨域(CORS)策略拦截,可换支持跨域的服务商或用代理。';
   }finally{btn.disabled=false;}
 }
+// ====== 主题切换 ======
+function applyTheme(){
+  document.body.className=state.theme==='light'?'theme-light':'';
+  const btn=document.getElementById('themeBtn');
+  if(btn)btn.textContent=state.theme==='light'?'☀️ 浅色':'🌙 深色';
+}
+function toggleTheme(){
+  state.theme=state.theme==='light'?'dark':'light';
+  save();applyTheme();
+}
+applyTheme();
+
 // 回填已保存的 AI 配置
 document.getElementById('aiUrl').value=state.ai.url||'';
 document.getElementById('aiModel').value=state.ai.model||'';
