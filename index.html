@@ -112,6 +112,44 @@
     width:100%;font-size:12px;text-align:center;color:var(--muted);margin:-4px 0 12px;
   }
   .ftotal.bad{color:#ff8c00;font-weight:600}
+  /* 会议记录 */
+  .meetings{margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
+  .meetings .dhead{display:flex;align-items:center;gap:10px;padding:12px 14px;flex-wrap:wrap}
+  .meetings .dhead h2{font-size:15px;margin:0;font-weight:700}
+  .meetings .dhead .dhint{font-size:12px;color:var(--muted)}
+  .meetings .dhead .dbtns{margin-left:auto;display:flex;gap:8px}
+  .meetings .mbody{padding:0 14px 14px}
+  .mentry{
+    border-top:1px solid var(--line);padding:10px 0;
+  }
+  .mentry .mhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+  .mentry .mnum{
+    width:30px;height:30px;flex:none;border-radius:8px;background:var(--panel2);
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:var(--accent)
+  }
+  .mentry .mtype{display:flex;gap:4px}
+  .mentry .mtype span{
+    padding:5px 10px;border-radius:8px;font-size:12px;cursor:pointer;
+    background:var(--panel2);border:1px solid var(--line);color:var(--muted);user-select:none;
+  }
+  .mentry .mtype span.active{font-weight:700}
+  .mentry .mtype span.mt-bell.active{background:#f5c84b;color:#3b2f00;border-color:#f5c84b}
+  .mentry .mtype span.mt-report.active{background:var(--bad);color:#fff;border-color:var(--bad)}
+  .mentry .mdel{
+    margin-left:auto;flex:none;background:transparent;border:none;color:var(--muted);font-size:16px;
+    cursor:pointer;padding:4px 8px;border-radius:6px;
+  }
+  .mentry .mdel:hover{color:var(--bad);background:var(--panel2)}
+  .mentry .mfields{display:flex;gap:6px;flex-wrap:wrap}
+  .mentry .mfields select,.mentry .mfields input{
+    background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--txt);
+    font-size:12px;padding:6px 8px;outline:none;font-family:inherit;
+  }
+  .mentry .mfields select:focus,.mentry .mfields input:focus{border-color:var(--accent)}
+  .mentry .mfields select{min-width:100px}
+  .mentry .mfields input{flex:1;min-width:120px}
+  .mentry .mbody-info{font-size:11px;color:var(--muted);margin-top:4px}
+  .meetings .dempty{color:var(--muted);font-size:13px;padding:10px 0;text-align:center}
   /* 轮抽顺序 */
   .draft{margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
   .draft .dhead{display:flex;align-items:center;gap:10px;padding:12px 14px;flex-wrap:wrap}
@@ -130,8 +168,7 @@
     background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--txt);
     font-size:13px;padding:7px 8px;outline:none;font-family:inherit;
   }
-  .drow select{flex:1;min-width:90px}
-  .drow .drole{flex:1.4;min-width:90px}
+  .drow .drole{flex:1;min-width:90px}
   .drow select:focus,.drow .drole:focus{border-color:var(--accent)}
   .drow .ddel{
     flex:none;background:transparent;border:none;color:var(--muted);font-size:16px;
@@ -187,9 +224,7 @@
     .fbox .fmarked{font-size:20px}
     .fbox .ftarget{width:36px}
     .fbox .fremain{font-size:11px}
-    .drow{flex-wrap:wrap}
-    .drow select,.drow .drole{min-width:0}
-    .drow .drole{flex:1 1 100%;order:3}
+    .drow .drole{min-width:0}
     .ref-body{grid-template-columns:1fr}
     .ai-cfg{grid-template-columns:1fr 1fr}
   }
@@ -224,13 +259,25 @@
 
 <div class="grid" id="grid"></div>
 
+<div class="meetings">
+  <div class="dhead">
+    <h2>📋 会议记录</h2>
+    <span class="dhint">记录每次拉铃/报尸的会议与投票结果</span>
+    <div class="dbtns">
+      <button onclick="addMeeting('bell')">🔔 拉铃</button>
+      <button onclick="addMeeting('report')">💀 报尸</button>
+      <button onclick="clearMeetings()">清空</button>
+    </div>
+  </div>
+  <div class="mbody" id="meetBody"></div>
+</div>
+
 <div class="draft">
   <div class="dhead">
     <h2>🔄 轮抽顺序</h2>
-    <span class="dhint">按手数记录每轮谁选、选了什么</span>
+    <span class="dhint">每手对应一位玩家,选择其抽到的角色</span>
     <div class="dbtns">
-      <button onclick="addPick()">＋ 加一手</button>
-      <button onclick="clearDraft()">清空</button>
+      <button onclick="clearDraft()">清空角色</button>
     </div>
   </div>
   <div class="dbody" id="draftBody"></div>
@@ -333,6 +380,11 @@ const KEY='gooseduck_tracker_v3';
 let state=load()||{count:13,players:{},factions:{good:8,neutral:2,bad:3},draft:[]};
 if(!state.factions)state.factions={good:8,neutral:2,bad:3};
 if(!state.draft)state.draft=[];
+function syncDraftLength(){
+  while(state.draft.length<state.count)state.draft.push({role:''});
+  state.draft.length=state.count;
+}
+if(!state.meetings)state.meetings=[];
 if(!state.ai)state.ai={url:'',key:'',model:''};
 if(!state.theme)state.theme='dark';
 
@@ -398,59 +450,116 @@ function render(){
   }
   document.getElementById('count').textContent=`存活 ${alive} · 出局 ${dead} · 共 ${state.count}`;
   renderFactions();
+  renderMeetings();
   renderDraft();
 }
 
-function playerLabel(i){
-  const nm=getP(i).name;
-  return nm?`${i}. ${nm}`:`玩家${i}`;
-}
 function renderDraft(){
+  syncDraftLength();
   const body=document.getElementById('draftBody');
-  if(!state.draft.length){
-    body.innerHTML='<div class="dempty">还没有记录,点「＋ 加一手」开始记录轮抽顺序</div>';
-    return;
-  }
-  // 玩家下拉选项
-  let opts='<option value="">— 选玩家 —</option>';
-  for(let i=1;i<=state.count;i++)opts+=`<option value="${i}">${esc(playerLabel(i))}</option>`;
-  // 已被选的角色(用于置灰)
   const used={};
   state.draft.forEach(d=>{if(d.role)used[d.role]=true});
   body.innerHTML='';
   state.draft.forEach((d,idx)=>{
     const row=document.createElement('div');
     row.className='drow';
-    const sel=opts.replace(`value="${d.player}"`,`value="${d.player}" selected`);
     row.innerHTML=`
       <div class="dnum">${idx+1}</div>
-      <select onchange="updPick(${idx},'player',this.value)">${sel}</select>
-      <select class="drole" onchange="updPick(${idx},'role',this.value)">${roleOptions(d.role,used)}</select>
-      <button class="ddel" title="删除这一手" onclick="delPick(${idx})">✕</button>`;
+      <select class="drole" onchange="updPick(${idx},this.value)">${roleOptions(d.role,used)}</select>`;
     body.appendChild(row);
   });
 }
-function addPick(){state.draft.push({player:'',role:''});save();renderDraft()}
-function updPick(idx,k,v){
+function updPick(idx,v){
   const d=state.draft[idx];
   if(!d)return;
-  d[k]=v;
-  applyPick(d);   // 选了玩家+角色 → 自动给该玩家卡标阵营色、填角色
+  d.role=v;
+  const pIdx=idx+1;
+  if(v){
+    const f=ROLE_FACTION[v];
+    const p=getP(pIdx);
+    p.role=v;
+    if(f)p.status=f;
+  }
   save();render();
 }
-// 根据轮抽这一手,自动同步到对应玩家卡
-function applyPick(d){
-  if(!d.player||!d.role)return;
-  const f=ROLE_FACTION[d.role];          // 未知阵营(S3新增)不强行标色
-  const p=getP(parseInt(d.player));
-  p.role=d.role;
-  if(f)p.status=f;
-}
-function delPick(idx){state.draft.splice(idx,1);save();renderDraft()}
 function clearDraft(){
-  if(!state.draft.length)return;
-  if(!confirm('清空轮抽顺序记录?'))return;
-  state.draft=[];save();renderDraft();
+  const hasRole=state.draft.some(d=>d.role);
+  if(!hasRole)return;
+  if(!confirm('清空所有轮抽角色选择?'))return;
+  state.draft.forEach(d=>d.role='');save();render();
+}
+
+// ====== 会议记录 ======
+function playerOpts(sel,placeholder){
+  let h=`<option value="">${placeholder}</option>`;
+  for(let i=1;i<=state.count;i++){
+    const nm=getP(i).name;
+    const label=nm?`${i}. ${nm}`:`玩家${i}`;
+    h+=`<option value="${i}"${i==sel?' selected':''}>${esc(label)}</option>`;
+  }
+  return h;
+}
+function renderMeetings(){
+  const body=document.getElementById('meetBody');
+  if(!state.meetings.length){
+    body.innerHTML='<div class="dempty">还没有会议记录,点上方按钮开始记录</div>';
+    return;
+  }
+  body.innerHTML='';
+  state.meetings.forEach((m,idx)=>{
+    const div=document.createElement('div');
+    div.className='mentry';
+    const typeLabel=m.type==='bell'?'🔔 拉铃':'💀 报尸';
+    div.innerHTML=`
+      <div class="mhead">
+        <div class="mnum">${idx+1}</div>
+        <div class="mtype">
+          <span class="mt-bell ${m.type==='bell'?'active':''}" onclick="updMeet(${idx},'type','bell')">🔔 拉铃</span>
+          <span class="mt-report ${m.type==='report'?'active':''}" onclick="updMeet(${idx},'type','report')">💀 报尸</span>
+        </div>
+        <button class="mdel" title="删除此会议" onclick="delMeeting(${idx})">✕</button>
+      </div>
+      <div class="mfields">
+        <select onchange="updMeet(${idx},'caller',this.value)" title="发起人">${playerOpts(m.caller,'— 谁发起 —')}</select>
+        ${m.type==='report'?`<select onchange="updMeet(${idx},'body',this.value)" title="死者">${playerOpts(m.body,'— 死者 —')}</select>`:''}
+        <select onchange="updMeet(${idx},'voted',this.value)" title="投票结果">
+          <option value="">— 投票结果 —</option>
+          <option value="skip"${m.voted==='skip'?' selected':''}>跳过(平票/不投)</option>
+          ${(()=>{let h='';for(let i=1;i<=state.count;i++){const nm=getP(i).name;const l=nm?`${i}. ${nm}`:`玩家${i}`;h+=`<option value="${i}"${i==m.voted?' selected':''}>${esc(l)} 出局</option>`}return h})()}
+        </select>
+        <input placeholder="备注:谁发言/指认了谁…" value="${esc(m.note||'')}" oninput="updMeet(${idx},'note',this.value)">
+      </div>
+      ${m.type==='report'&&m.body?`<div class="mbody-info">尸体: ${getP(m.body).name||'玩家'+m.body}</div>`:''}
+    `;
+    body.appendChild(div);
+  });
+}
+function addMeeting(type){
+  state.meetings.push({type:type,caller:'',body:'',voted:'',note:''});
+  save();render();
+  document.getElementById('meetBody').lastElementChild?.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function updMeet(idx,k,v){
+  const m=state.meetings[idx];
+  if(!m)return;
+  m[k]=v;
+  if(k==='voted'&&v&&v!=='skip'){
+    const p=getP(parseInt(v));
+    p.dead=true;
+  }
+  if(k==='body'&&v){
+    const p=getP(parseInt(v));
+    p.dead=true;
+  }
+  save();render();
+}
+function delMeeting(idx){
+  state.meetings.splice(idx,1);save();render();
+}
+function clearMeetings(){
+  if(!state.meetings.length)return;
+  if(!confirm('清空所有会议记录?'))return;
+  state.meetings=[];save();render();
 }
 
 const FMETA={
@@ -502,7 +611,7 @@ function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replac
 function upd(i,k,v){getP(i)[k]=v;save()}
 function setStatus(i,s){const p=getP(i);p.status=(p.status===s)?'':s;save();render()}
 function toggleDead(i){const p=getP(i);p.dead=!p.dead;save();render()}
-function setCount(d){state.count=Math.max(4,Math.min(20,state.count+d));save();render()}
+function setCount(d){state.count=Math.max(4,Math.min(20,state.count+d));syncDraftLength();save();render()}
 function resetTags(){
   if(!confirm('清空所有身份标记、角色和备注?(保留玩家名)'))return;
   for(let i=1;i<=state.count;i++){const p=getP(i);p.status='';p.role='';p.note='';p.dead=false}
@@ -510,7 +619,7 @@ function resetTags(){
 }
 function newGame(){
   if(!confirm('开始新一局?将清空全部记录(含玩家名、轮抽顺序)'))return;
-  state.players={};state.draft=[];save();render();
+  state.players={};state.draft=[];state.meetings=[];syncDraftLength();save();render();
 }
 // ====== 导出本局记录 ======
 const STAG={good:'[好人]',bad:'[坏人]',neutral:'[中立]','':'[未知]'};
@@ -526,11 +635,21 @@ function buildReport(){
     if(p.note)s+=` 备注:${p.note}`;
     L.push(s);
   }
-  if(state.draft.length){
+  if(state.meetings.length){
+    L.push('—— 会议记录 ——');
+    state.meetings.forEach((m,i)=>{
+      const caller=m.caller?(getP(m.caller).name||'玩家'+m.caller):'?';
+      let s=`第${i+1}次: ${m.type==='bell'?'🔔拉铃':'💀报尸'} · 发起:${caller}`;
+      if(m.type==='report'&&m.body){s+=` · 死者:${getP(m.body).name||'玩家'+m.body}`}
+      if(m.voted){s+=` · 投票:${m.voted==='skip'?'跳过':(getP(m.voted).name||'玩家'+m.voted)+'出局'}`}
+      if(m.note)s+=` · ${m.note}`;
+      L.push(s);
+    });
+  }
+  if(state.draft.some(d=>d.role)){
     L.push('—— 轮抽顺序 ——');
     state.draft.forEach((d,i)=>{
-      const nm=d.player?(getP(d.player).name||'玩家'+d.player):'?';
-      L.push(`第${i+1}手: ${nm} → ${d.role||'?'}`);
+      if(d.role)L.push(`第${i+1}手: ${d.role}`);
     });
   }
   return L.join('\n');
@@ -552,9 +671,13 @@ function exportImage(){
   rows.push({t:'sub',s:new Date().toLocaleString()+'  ·  '+state.factions.good+'好 / '+state.factions.neutral+'中立 / '+state.factions.bad+'鸭 · 共'+state.count+'人'});
   rows.push({t:'h',s:'玩家'});
   for(let i=1;i<=state.count;i++)rows.push({t:'player',i,p:getP(i)});
-  if(state.draft.length){
+  if(state.meetings.length){
+    rows.push({t:'h',s:'会议记录'});
+    state.meetings.forEach((m,idx)=>rows.push({t:'meet',idx,m}));
+  }
+  if(state.draft.some(d=>d.role)){
     rows.push({t:'h',s:'轮抽顺序'});
-    state.draft.forEach((d,idx)=>rows.push({t:'draft',idx,d}));
+    state.draft.forEach((d,idx)=>{if(d.role)rows.push({t:'draft',idx,d})});
   }
   const H=pad*2+rows.reduce((a,r)=>a+(r.t==='title'?40:r.t==='h'?34:r.t==='sub'?line:line),0);
   const sc=2,c=document.createElement('canvas');
@@ -578,10 +701,18 @@ function exportImage(){
       if(p.note){const w=x.measureText(s).width;x.fillStyle='#82a6bd';x.fillText('  · '+p.note,pad+20+w,y+13);}
       y+=line;
     }
+    else if(r.t==='meet'){
+      const m=r.m,caller=m.caller?(getP(m.caller).name||'玩家'+m.caller):'?';
+      let s=`${r.idx+1}. ${m.type==='bell'?'🔔拉铃':'💀报尸'} · ${caller}`;
+      if(m.type==='report'&&m.body)s+=` · 死者:${getP(m.body).name||'玩家'+m.body}`;
+      if(m.voted)s+=` → ${m.voted==='skip'?'跳过':(getP(m.voted).name||'玩家'+m.voted)+'出局'}`;
+      x.fillStyle=m.type==='bell'?'#f5c84b':'#fb6a6a';x.font='14px sans-serif';
+      x.fillText(s,pad+20,y+13);
+      y+=line;
+    }
     else if(r.t==='draft'){
-      const d=r.d,nm=d.player?(getP(d.player).name||'玩家'+d.player):'?';
       x.fillStyle='#9fd9d0';x.font='14px sans-serif';
-      x.fillText(`第${r.idx+1}手:   ${nm}   →   ${d.role||'?'}`,pad+20,y+13);
+      x.fillText(`第${r.idx+1}手:   ${r.d.role}`,pad+20,y+13);
       y+=line;
     }
   });
@@ -612,7 +743,7 @@ async function runAI(){
   const out=document.getElementById('aiOut'), btn=document.getElementById('aiBtn');
   if(!cfg.url||!cfg.key){alert('请先填写 API 地址和 API Key');return;}
   out.className='ai-out';out.textContent='⏳ AI 分析中…';btn.disabled=true;
-  const sys='你是《鹅鸭杀》(Goose Goose Duck)社交推理游戏的资深分析师。根据玩家提供的记牌信息——包含阵营配置、每位玩家的存活状态/被标注的阵营倾向(好人/坏人/中立/未知)/怀疑角色/行为备注,以及轮抽顺序——给出:1)当前局势总体判断;2)最可疑的鸭子人选及推理依据;3)还需重点观察或验证的玩家;4)下一步投票/行动建议。要求:用简洁中文分点输出,严格基于已提供的标注推理,不要编造未给出的信息;若信息不足请直接指出缺什么。';
+  const sys='你是《鹅鸭杀》(Goose Goose Duck)社交推理游戏的资深分析师。根据玩家提供的记牌信息——包含阵营配置、每位玩家的存活状态/被标注的阵营倾向(好人/坏人/中立/未知)/怀疑角色/行为备注,轮抽顺序,以及会议记录(拉铃/报尸、发起人、投票结果、讨论要点)——给出:1)当前局势总体判断;2)最可疑的鸭子人选及推理依据;3)还需重点观察或验证的玩家;4)下一步投票/行动建议。要求:用简洁中文分点输出,严格基于已提供的标注推理,不要编造未给出的信息;若信息不足请直接指出缺什么。';
   const user='【本局记牌数据】\n'+buildReport();
   try{
     const res=await fetch(cfg.url,{
@@ -650,6 +781,7 @@ document.getElementById('aiKey').value=state.ai.key||'';
 // 填充卡片角色名联想列表
 document.getElementById('roleList').innerHTML=
   ['good','bad','neutral','unknown'].flatMap(f=>ROLES[f]).map(r=>`<option value="${esc(r)}">`).join('');
+syncDraftLength();
 render();
 </script>
 </body>
