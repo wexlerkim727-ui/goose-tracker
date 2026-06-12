@@ -6,16 +6,20 @@
 <title>鹅鸭杀 记牌器</title>
 <style>
   :root{
-    --bg:#0f1226; --bg2:#141838; --panel:#191d3a; --panel2:#232850;
-    --line:#2e3566; --txt:#e8ebff; --muted:#8b90c4;
-    --good:#34c759; --bad:#ff453a; --neutral:#ffd60a; --unknown:#6c7299;
-    --accent:#5b8cff;
+    /* 深蓝海底 + 绿松石 */
+    --bg:#081a2e; --bg2:#0b2a47; --panel:#0f2c4a; --panel2:#163c5f;
+    --line:#21496e; --txt:#e3f3f4; --muted:#82a6bd;
+    --good:#34d39e; --bad:#fb6a6a; --neutral:#f5c84b; --unknown:#5d7b96;
+    --accent:#2dd4bf; --accent-ink:#03312c;
+    --shadow:0 6px 22px rgba(0,0,0,.32);
   }
   body.theme-light{
-    --bg:#eef1f8; --bg2:#e3e8f5; --panel:#ffffff; --panel2:#eef1f8;
-    --line:#d4dae9; --txt:#1b2142; --muted:#6a7099;
-    --good:#1e9e4a; --bad:#e0342a; --neutral:#b88600; --unknown:#9aa0c0;
-    --accent:#3a6ff0;
+    /* 浅绿松石 + 深蓝字 */
+    --bg:#e9f4f4; --bg2:#d7eaec; --panel:#ffffff; --panel2:#e8f3f3;
+    --line:#c6dee0; --txt:#0c2a3c; --muted:#5d7c8a;
+    --good:#119e74; --bad:#dc4343; --neutral:#a87f00; --unknown:#88a1ad;
+    --accent:#0d9488; --accent-ink:#ffffff;
+    --shadow:0 4px 16px rgba(13,72,84,.12);
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   body{
@@ -34,12 +38,14 @@
   }
   button:hover{background:var(--line);border-color:var(--accent)}
   button:active{transform:scale(.96)}
-  .btn-accent{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  .btn-accent{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+  .btn-accent:hover{background:var(--accent);filter:brightness(1.08)}
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
   .card{
     background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;
-    position:relative;transition:.15s;border-left:5px solid var(--unknown);
+    position:relative;transition:.15s;border-left:5px solid var(--unknown);box-shadow:var(--shadow);
   }
+  .card:hover{transform:translateY(-2px);border-color:var(--accent)}
   .card.dead{opacity:.45;filter:grayscale(.4)}
   .card.s-good{border-left-color:var(--good)}
   .card.s-bad{border-left-color:var(--bad)}
@@ -81,7 +87,7 @@
   }
   .fbox{
     flex:1;min-width:150px;background:var(--panel);border:1px solid var(--line);
-    border-radius:12px;padding:10px 12px;border-top:4px solid var(--unknown);
+    border-radius:12px;padding:10px 12px;border-top:4px solid var(--unknown);box-shadow:var(--shadow);
   }
   .fbox.f-good{border-top-color:var(--good)}
   .fbox.f-neutral{border-top-color:var(--neutral)}
@@ -107,7 +113,7 @@
   }
   .ftotal.bad{color:#ff8c00;font-weight:600}
   /* 轮抽顺序 */
-  .draft{margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .draft{margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
   .draft .dhead{display:flex;align-items:center;gap:10px;padding:12px 14px;flex-wrap:wrap}
   .draft .dhead h2{font-size:15px;margin:0;font-weight:700}
   .draft .dhead .dhint{font-size:12px;color:var(--muted)}
@@ -134,7 +140,7 @@
   .drow .ddel:hover{color:var(--bad);background:var(--panel2)}
   .draft .dempty{color:var(--muted);font-size:13px;padding:10px 0;text-align:center}
   /* AI 分析 */
-  .ai{margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .ai{margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
   .ai-cfg{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;padding:4px 14px 10px}
   .ai-cfg input,.ai-cfg select{
     background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--txt);
@@ -151,7 +157,7 @@
   .ai-out.err{color:#ff8c8c}
   #aiBtn[disabled]{opacity:.5;cursor:wait}
   /* 角色速查 */
-  .ref{margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .ref{margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
   .ref summary{padding:12px 14px;cursor:pointer;font-weight:600;font-size:14px;user-select:none}
   .ref-body{padding:4px 14px 14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
   .ref-col h3{font-size:13px;margin:8px 0 6px;display:flex;align-items:center;gap:6px}
@@ -539,7 +545,7 @@ function exportText(){
   }else prompt('复制以下记录:',txt);
 }
 function exportImage(){
-  const FC={good:'#34c759',bad:'#ff453a',neutral:'#ffd60a',unknown:'#8b90c4','':'#6c7299'};
+  const FC={good:'#34d39e',bad:'#fb6a6a',neutral:'#f5c84b',unknown:'#5d7b96','':'#5d7b96'};
   const pad=24,line=26,W=640;
   const rows=[];
   rows.push({t:'title',s:'🦢 鹅鸭杀 记牌器 — 本局记录'});
@@ -554,12 +560,13 @@ function exportImage(){
   const sc=2,c=document.createElement('canvas');
   c.width=W*sc;c.height=H*sc;
   const x=c.getContext('2d');x.scale(sc,sc);
-  x.fillStyle='#141838';x.fillRect(0,0,W,H);
+  const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'#081a2e');g.addColorStop(1,'#0b2a47');
+  x.fillStyle=g;x.fillRect(0,0,W,H);
   let y=pad;
   rows.forEach(r=>{
-    if(r.t==='title'){x.fillStyle='#e8ebff';x.font='bold 22px sans-serif';x.fillText(r.s,pad,y+22);y+=40;}
-    else if(r.t==='sub'){x.fillStyle='#8b90c4';x.font='13px sans-serif';x.fillText(r.s,pad,y+14);y+=line;}
-    else if(r.t==='h'){x.fillStyle='#5b8cff';x.font='bold 15px sans-serif';x.fillText('▸ '+r.s,pad,y+16);y+=34;}
+    if(r.t==='title'){x.fillStyle='#2dd4bf';x.font='bold 22px sans-serif';x.fillText(r.s,pad,y+22);y+=40;}
+    else if(r.t==='sub'){x.fillStyle='#82a6bd';x.font='13px sans-serif';x.fillText(r.s,pad,y+14);y+=line;}
+    else if(r.t==='h'){x.fillStyle='#2dd4bf';x.font='bold 15px sans-serif';x.fillText('▸ '+r.s,pad,y+16);y+=34;}
     else if(r.t==='player'){
       const p=r.p;
       x.fillStyle=FC[p.status||''];x.beginPath();x.arc(pad+6,y+8,6,0,7);x.fill();
@@ -567,13 +574,13 @@ function exportImage(){
       let s=`${r.i}. ${p.name||'玩家'+r.i}`;
       if(p.dead)s+=' 💀';
       if(p.role)s+='  ['+p.role+']';
-      x.fillStyle=p.dead?'#6c7299':'#e8ebff';x.fillText(s,pad+20,y+13);
-      if(p.note){const w=x.measureText(s).width;x.fillStyle='#8b90c4';x.fillText('  · '+p.note,pad+20+w,y+13);}
+      x.fillStyle=p.dead?'#5d7b96':'#e3f3f4';x.fillText(s,pad+20,y+13);
+      if(p.note){const w=x.measureText(s).width;x.fillStyle='#82a6bd';x.fillText('  · '+p.note,pad+20+w,y+13);}
       y+=line;
     }
     else if(r.t==='draft'){
       const d=r.d,nm=d.player?(getP(d.player).name||'玩家'+d.player):'?';
-      x.fillStyle='#a9aede';x.font='14px sans-serif';
+      x.fillStyle='#9fd9d0';x.font='14px sans-serif';
       x.fillText(`第${r.idx+1}手:   ${nm}   →   ${d.role||'?'}`,pad+20,y+13);
       y+=line;
     }
