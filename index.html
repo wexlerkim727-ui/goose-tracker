@@ -168,7 +168,8 @@
     background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--txt);
     font-size:13px;padding:7px 8px;outline:none;font-family:inherit;
   }
-  .drow .drole{flex:1;min-width:90px}
+  .drow .drole{flex:1.2;min-width:90px}
+  .drow .dclaim{flex:0.8;min-width:80px}
   .drow select:focus,.drow .drole:focus{border-color:var(--accent)}
   .drow .ddel{
     flex:none;background:transparent;border:none;color:var(--muted);font-size:16px;
@@ -224,7 +225,7 @@
     .fbox .fmarked{font-size:20px}
     .fbox .ftarget{width:36px}
     .fbox .fremain{font-size:11px}
-    .drow .drole{min-width:0}
+    .drow .drole,.drow .dclaim{min-width:0}
     .ref-body{grid-template-columns:1fr}
     .ai-cfg{grid-template-columns:1fr 1fr}
   }
@@ -275,7 +276,7 @@
 <div class="draft">
   <div class="dhead">
     <h2>🔄 轮抽顺序</h2>
-    <span class="dhint">每手对应一位玩家,选择其抽到的角色</span>
+    <span class="dhint">记录每手选的角色,会议上有人自报时填「谁认领」自动同步</span>
     <div class="dbtns">
       <button onclick="clearDraft()">清空角色</button>
     </div>
@@ -381,7 +382,7 @@ let state=load()||{count:13,players:{},factions:{good:8,neutral:2,bad:3},draft:[
 if(!state.factions)state.factions={good:8,neutral:2,bad:3};
 if(!state.draft)state.draft=[];
 function syncDraftLength(){
-  while(state.draft.length<state.count)state.draft.push({role:''});
+  while(state.draft.length<state.count)state.draft.push({role:'',claim:''});
   state.draft.length=state.count;
 }
 if(!state.meetings)state.meetings=[];
@@ -465,28 +466,28 @@ function renderDraft(){
     row.className='drow';
     row.innerHTML=`
       <div class="dnum">${idx+1}</div>
-      <select class="drole" onchange="updPick(${idx},this.value)">${roleOptions(d.role,used)}</select>`;
+      <select class="drole" onchange="updPick(${idx},'role',this.value)">${roleOptions(d.role,used)}</select>
+      <select class="dclaim" onchange="updPick(${idx},'claim',this.value)">${playerOpts(d.claim,'— 谁认领 —')}</select>`;
     body.appendChild(row);
   });
 }
-function updPick(idx,v){
+function updPick(idx,k,v){
   const d=state.draft[idx];
   if(!d)return;
-  d.role=v;
-  const pIdx=idx+1;
-  if(v){
-    const f=ROLE_FACTION[v];
-    const p=getP(pIdx);
-    p.role=v;
+  d[k]=v;
+  if(d.role&&d.claim){
+    const p=getP(parseInt(d.claim));
+    p.role=d.role;
+    const f=ROLE_FACTION[d.role];
     if(f)p.status=f;
   }
   save();render();
 }
 function clearDraft(){
-  const hasRole=state.draft.some(d=>d.role);
-  if(!hasRole)return;
-  if(!confirm('清空所有轮抽角色选择?'))return;
-  state.draft.forEach(d=>d.role='');save();render();
+  const has=state.draft.some(d=>d.role||d.claim);
+  if(!has)return;
+  if(!confirm('清空所有轮抽记录?'))return;
+  state.draft.forEach(d=>{d.role='';d.claim=''});save();render();
 }
 
 // ====== 会议记录 ======
@@ -649,7 +650,7 @@ function buildReport(){
   if(state.draft.some(d=>d.role)){
     L.push('—— 轮抽顺序 ——');
     state.draft.forEach((d,i)=>{
-      if(d.role)L.push(`第${i+1}手: ${d.role}`);
+      if(d.role){let s=`第${i+1}手: ${d.role}`;if(d.claim)s+=` ← ${getP(d.claim).name||'玩家'+d.claim}认领`;L.push(s)}
     });
   }
   return L.join('\n');
@@ -712,7 +713,8 @@ function exportImage(){
     }
     else if(r.t==='draft'){
       x.fillStyle='#9fd9d0';x.font='14px sans-serif';
-      x.fillText(`第${r.idx+1}手:   ${r.d.role}`,pad+20,y+13);
+      let ds=`第${r.idx+1}手:   ${r.d.role}`;if(r.d.claim)ds+=`  ← ${getP(r.d.claim).name||'玩家'+r.d.claim}`;
+      x.fillText(ds,pad+20,y+13);
       y+=line;
     }
   });
